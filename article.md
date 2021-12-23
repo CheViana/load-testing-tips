@@ -27,7 +27,7 @@ Where one can get these numbers, and which URLs should be in scenario at all? In
 
 Now there's the question of how much load should the tool apply to web app. That is also a question to answer which one can use logs/monitoring of legacy app. It's likely the case that user load for legacy app fluctuates a lot during the course of day or week. Determine the min, avg and max RPS legacy app handled during say last month (same datetime range used in previous analysis of how load should split between page types), and swing from there. I would suggest following formula for RPS in load testing session: `max(avgRPS * 3, 2 * maxRPS)`. Simplest formula good enough for most is `2 * maxRPS`. If user traffic is anticipated to grow in future, use anticipated future `maxRPS` instead of one derived from logs.
 
-There is another way to think about target load - in terms of simultaneous users. One can compute what is max amount of users quering the app at the same time, and use that for value of simulated users in load testing session. Most load testing tools only allow to specify amount of simulated users, not target RPS. Simulated user request should be close to real life. In case app users are live people (not other apps), it makes sense to introduce small delay between requests simulated user makes, and make sure tool reuses HTTP connection for requests from same artificial user. Some load testing tools allow to write involved scenario: user-thread queries thome page, then product list, then product list page 2, then product detail, then does checkout. It can be easier to write scenario this way, yet it is important to make sure created RPS level is representative of real life traffic. 
+There is another way to think about target load - in terms of simultaneous users. One can compute what is max amount of users quering the app at the same time, and use that for value of simulated users in load testing session. Most load testing tools only allow to specify amount of simulated users, not target RPS. Simulated user request should be close to real life. In case app users are live people (not other apps), it makes sense to introduce small delay between requests simulated user makes (e.g. JMeter's DelayTimer), and make sure tool reuses HTTP connection for requests from same artificial user (e.g. JMeter's HttpClient class and options). Some load testing tools allow to write involved scenario: user-thread queries thome page, then product list, then product list page 2, then product detail, then does checkout. It can be easier to write scenario this way, instead of defining how much RPS should go to which page, yet it is important to make sure created load level is representative of real life traffic.
 
 It is good idea to investigate both RPS level and simultaneous users level, and make sure both of those are covered with big gap by amount of artificial load you're gonna apply.
 
@@ -64,18 +64,28 @@ It is likely a good idea to count very long executing requests (10 seconds?) as 
 Scenario used by load testing tool usually contains definition of "success hit" which can be tweaked to suit your app needs.
 
 
-### Tools
+## Tools
 
-reuse connections
+There's plenty load testing tools available - see for example this [post](https://k6.io/blog/comparing-best-open-source-load-testing-tools/).
+Popular long-existing tool used by lots of people is JMeter. It's good fit for those who need involved scenario and prefer GUI interactions over writing code. It's possible to run it with master+worker nodes setup in cloud (see this [post](https://github.com/kubernauts/jmeter-kubernetes)), or use pay-for online-based platforms which run JMeter for you.
+Another tool which gains popularity quickly particularly for cloud-based setup is k6. It's good fit if you don't mind JavaScript/JSON and need something cloud-native. GitLab has [example](https://docs.gitlab.com/ee/user/project/merge_requests/load_performance_testing.html) on how to run k6 in job, which sounds like good idea for quick load test before rolling out new vesion of web app to prod, but no so great idea to use k6 in GitLab job for week-long high-load session before web app goes live for the first time. One can run k6 in separate from web app cloud project instead, or from some other hardware.
+Simple tool which is also very powerful is [wrk2](https://github.com/giltene/wrk2). It allows to specify target RPS. Good fit if you have one static URL to test, or to perform simpler preparatory testing.
+In case you're good with Python and don't need high RPS level, locust might be good fit, as it is very easy to write complex scenario for.
+
+One real nice thing about modern load testing tools is that most of them can be configured to show load testing results in real time, e.g. it is possible to make [JMeter emit current RPS, error rate, response time to a db which will power real-time dashboard](https://www.influxdata.com/influxdb-templates/apache-jmeter/). Online-based platforms which run load testing tool for you usually provide such monitoring too. It is especially helpful for long-duration test sessions.
 
 
-### Preparatory sessions
+## Preparatory sessions
 
-test backends first
+It makes sense to first load test backends and DBs web app uses - calculate what load is expected for DB, and apply that. Make sure backends and DBs and other things web app uses are handling load alright (satisfy SLA), then switch to load testing web app itself. It might be reaper this way - load tests are expensive in terms of burned cloud resources.
+It's also a good idea to run smaller load session first for web app. Same scenario as you're going to run for high load for a long time, but reduced load and shorter duration. For example, load test just one web app pod, make sure it works OK for CPU load level of scaling threshold, then switch to higher load which will involve multiple app pods.
 
-### Environment
+## Environment
 
 don't share infra used by load test with live prod apps
 caching
 
-### Results reporting
+## Results reporting
+
+
+## Resilience testing
