@@ -130,7 +130,11 @@ It's a good idea to run a smaller load session for web app before starting big l
 
 Among other kinds of sessions highly adviced to perform are "rectangular load" session and "spike" session.
 
-"Rectangular load" is a session in which simulated user load has a form of rectangle: 20 RPS for 15 min, 10 RPS for 15 min, 20 RPS for 15 min, etc. Let's say initially web app stack has 2 pods in stack, when hit by 20 RPS it scales up to 4 pods, when load decreases to 10 RPS it scales down to 2 pods, etc. It could be abrupt switch from 10 to 20 RPS or it could be gradual change. For abrupt change one can possibly expect a bit of errors during the "uphill" switch from 10 to 20 RPS. It's best if those errors don't exceed SLA level. This type of session allows to look at how good web app scaling is tuned: how quickly web app stack can scale up, whether requests are dropped when app downscales. JMeter can be configured to produce "rectangular" load using [programmable timer](https://www.blazemeter.com/blog/comprehensive-guide-using-jmeter-timers) like this one:
+"Rectangular load" is a session in which simulated user load has a form of rectangle: 20 RPS for 15 min, 10 RPS for 15 min, 20 RPS for 15 min, etc.
+
+![Rectangular load session, RPS over time](https://github.com/CheViana/load-testing-tips/blob/master/img/rectangular.png)
+
+Let's say initially web app stack has 2 pods in stack, when hit by 20 RPS it scales up to 4 pods, when load decreases to 10 RPS it scales down to 2 pods, etc. It could be abrupt switch from 10 to 20 RPS or it could be gradual change. For abrupt change one can possibly expect a bit of errors during the "uphill" switch from 10 to 20 RPS. It's best if those errors don't exceed SLA level. This type of session allows to look at how good web app scaling is tuned: how quickly web app stack can scale up, whether requests are dropped when app downscales. JMeter can be configured to produce "rectangular" load using [programmable timer](https://www.blazemeter.com/blog/comprehensive-guide-using-jmeter-timers) like this one:
 
 ```
     <JSR223Timer guiclass="TestBeanGUI" testclass="JSR223Timer" testname="JSR223 Timer" enabled="true">
@@ -154,6 +158,9 @@ if (minLastDigit &lt; 10 ) {
 ```
 
 A "spike" session is a simulated short-time spike in load level. It is expected to encounter elevated error level during the spike. Of most interest is how web app stack recovers: it should be able to work normally (satisfy SLA) after the spike is gone, all on it's own, without developer's help. One can load web app with regular scenario using third of load level, and use another instance of load testing tool to create short-term spike.
+
+![Spike load session, RPS over time](https://github.com/CheViana/load-testing-tips/blob/master/img/spike.png)
+
 
 ### Resilience sessions
 
