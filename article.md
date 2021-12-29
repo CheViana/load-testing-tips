@@ -34,11 +34,19 @@ By scenario I mean which web app URLs load testing tool will hit. Here's an exam
     - 5% submit order - POST https://musicstore.com/buy/
 ```
 
+#### Rewriting an existing app
+
 Where can one get these numbers, and which URLs should be in the scenario at all? If a new web app is replacing an existing one (which is really true for a majority of new apps), one can mine the logs of the legacy application. It's ok to only include high-hit pages in the scenario. E.g. from logs collected over last month, total sum of hits to home, product list and detail pages is 98.3% of all hits, and other page types account for max 0.1% hits per page type. For such case, load testing scenario can include only home, product list and detail page hits. However, it is important that hits to other page types won't bring the whole web app down. In case "other page types" are all just static pages, there is probably no need to include them in scenario. If there are page types which are not hit frequently but are heavy on resource usage, it might be good idea to include those in the main scenario or run separate smaller-scale load testing session for those, possibly with adjusted success criteria.
 
 Now there's the question of how much load should the tool apply to web app. That is also a question to answer which one can use logs/monitoring of legacy app. It's likely the case that user load for legacy app fluctuates a lot during the course of day or week. Determine the min, avg and max RPS legacy app handled during, say, last month (same datetime range used in previous analysis of how load should split between page types), and swing from there. I suggest the following formula for RPS in load testing session: `max(avgRPS * 4, 3 * maxRPS)`. Simplest formula good enough for most is `3 * maxRPS`. If user traffic is anticipated to grow in future, use anticipated future `maxRPS` instead of one derived from logs.
 
 There is another way to think about target load - in terms of simultaneous users. One can compute what is max amount of users quering the app at the same time, and use that for value of simulated users in load testing session. A lot of load testing tools allow to specify amount of simulated users, but not target RPS. Some load testing tools allow to write involved scenario this way: simulated user queries home page, then product list, then product list page 2, then product detail, then does checkout. It is good idea to investigate both RPS level and simultaneous users level, and make sure both of those are covered with big gap by amount of artificial load that is going to be applied.
+
+#### Brand new apps
+
+What if the app is completely new, there's no logs to mine? Then one might brainstorm together with business folks scenario which best predicts app usage, and possibly use higher value in `N * maxRPS` formulae for load level.
+
+#### Keep scenario close to real life
 
 Simulated user request should be close to real life. If app users are live people (not other apps), it makes sense to introduce a small delay between requests simulated user makes (e.g. using [JMeter's random timer](https://www.blazemeter.com/blog/comprehensive-guide-using-jmeter-timers)).
 
@@ -68,9 +76,6 @@ Here's how to configure parametrizing for JMeter (XML of scenario file):
     </CSVDataSet>
     <hashTree/>
 ```
-
-
-What if the app is completely new, there's no logs to mine? Then one might brainstorm together with business folks scenario which best predicts app usage, and possibly use higher value in `N * maxRPS` formulae for load level.
 
 Scenario can also have a "ramp up" time configured - it won't unleash all simulated load at once, instead load will grow bit by bit during configured time. This way might better reflect real life, for example when canary rollout strategy is used. (Use [JMeter thread group options](https://jmeter.apache.org/usermanual/test_plan.html#thread_group) to configure ramp time).
 
@@ -197,4 +202,4 @@ It's a vey bright idea to document all load testing session results. It can make
 - file with scenario which was employed to run the session
 - list of problems surfaced during the session, investigation and mitigation notes
 
-Last piece of advice - don't get load testing tool's logs to fill up all free space, and hault the load. Provision enough log space, or turn it off in favor of real time monitoring.
+Last piece of advice - don't get load testing tool's logs to fill up all free space, and halt the load. Provision enough log space, or turn it off in favor of real time monitoring.
